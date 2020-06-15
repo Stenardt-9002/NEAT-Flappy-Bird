@@ -3,7 +3,7 @@ import neat
 import os 
 import random 
 import time 
-
+pygame.font.init()
 
 
 win_WIDTH = 500
@@ -15,6 +15,9 @@ BIRD_IMGS = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bir
 PIPE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pipe.png")))
 BASE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")))
 BG_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bg.png")))
+
+STAT_FOINT = pygame.font.SysFont("comicsans",50)
+
 
 
 class Bird:
@@ -51,7 +54,7 @@ class Bird:
             
         self.y = self.y+d #go up or go down
 
-        if d<0 or self.y < self.height +50:
+        if d<0 or self.y < self.height +50:#still upwards
             if self.tilt<self.mAX_ROTATION:
                 self.tilt = self.mAX_ROTATION
                 pass 
@@ -82,10 +85,10 @@ class Bird:
         # elif self.img_count==self.ANIMATION_TIME*3:
         #     self.img = self.IMGS[2]
         
-        
+        #dont flap when its going down
         if self.tilt<=-80:
             self.img = self.IMGS[1]
-            self.img_count = self.ANIMATION_TIME*2
+            self.img_count = self.ANIMATION_TIME*2 #dont skip its raotion
         
         #rotate it about centre
         rotated_image = pygame.transform.rotate(self.img,self.tilt)
@@ -195,27 +198,76 @@ class Base:#base ground image short keep moving
 
 
 
-def draw_window(win,birdobj):
+def draw_window(win,birdobj,pipeobj,baseobj,score):
     win.blit(BG_IMG,(0,0))
+    #pipes
+    # pipeobj.draw()
+    texttoblit = STAT_FOINT.render("Score : "+str(score),1,(255,255,255))
+    baseobj.draw(win)
+    for pip in pipeobj:
+        pip.draw(win)
+
+    
+
+
+
     birdobj.draw(win)
+    win.blit(texttoblit,(10,10))
     pygame.display.update()
     pass 
 
 def main():
-    birdobj = Bird(200,200)
+    # birdobj = Bird(200,200)
+    birdobj = Bird((int)(0.23*win_WIDTH*2),(int)(0.35*win_HEIGHT *1000/800))
+    baseobj = Base(0.73*win_HEIGHT*1000/800)
+    pipeobj = [Pipe(750)]
     win = pygame.display.set_mode((win_WIDTH,win_HEIGHT))
-
+    score = 0
 #movement of bird 
     clock = pygame.time.Clock()#tick rate
 
 
     run = True
     while run:
+        clock.tick(30)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-        birdobj.move()    
-        draw_window(win,birdobj)
+
+        # birdobj.move()  
+        add_pipe = False
+        removal_list_piep = []
+        for pip in pipeobj:
+            if pip.collide(birdobj): #collision
+                print("HITHITHIHTI\n\n")
+                pass 
+
+            #pipes pass 
+            if pip.x+pip.PIPE_TOP.get_width()<0:
+                #pipe gone
+                removal_list_piep.append(pip)
+            
+            if not pip.passed and pip.x < birdobj.x-100:#bird has crossed pipe continue game
+                pip.passed = True 
+                add_pipe = True
+                pass
+            pip.move()
+        if add_pipe:
+            #opening add pipe
+            score+=1 
+            pipeobj.append(Pipe(750))
+        for r in removal_list_piep:
+            pipeobj.remove(r)
+
+        if birdobj.y + birdobj.img.get_height()>=730:
+            #collision with god sky
+            pass
+        
+        
+        baseobj.move()
+        # draw_window(win,birdobj)
+        draw_window(win,birdobj,pipeobj,baseobj,score)
+
             
     pygame.quit()
     quit()
